@@ -8,8 +8,8 @@ import logging
 from datetime import datetime, date
 
 # ==================== SOZLAMALAR ====================
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
-LEADER_ID = 123456789  # O'zingizning Telegram ID ingiz
+BOT_TOKEN = "8648316530:AAGpUDwPvSWNazeelITOg95gM3CPxFIlz7E"
+LEADER_ID = 8623551943  # O'zingizning Telegram ID ingiz
 
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
