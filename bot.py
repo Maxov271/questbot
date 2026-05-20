@@ -8,8 +8,8 @@ import logging
 from datetime import datetime, date
 
 # ==================== SOZLAMALAR ====================
-BOT_TOKEN = "8648316530:AAGpUDwPvSWNazeelITOg95gM3CPxFIlz7E"
-LEADER_ID = 8623551943  # O'zingizning Telegram ID ingiz
+BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+LEADER_ID = 123456789  # O'zingizning Telegram ID ingiz
 
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -385,6 +385,7 @@ def admin_panel(message):
     kb = types.InlineKeyboardMarkup(row_width=1)
     kb.add(
         types.InlineKeyboardButton("➕ Savol qo'shish", callback_data="add_q"),
+        types.InlineKeyboardButton("📥 Ko'p savol qo'shish", callback_data="bulk_q"),
         types.InlineKeyboardButton("📋 Savollar ro'yxati", callback_data="list_q"),
         types.InlineKeyboardButton("📢 Broadcast", callback_data="broadcast"),
         types.InlineKeyboardButton("👥 Foydalanuvchilar", callback_data="list_users"),
@@ -486,6 +487,105 @@ def aq_correct(call):
         bot.edit_message_text(f"✅ Savol #{q_id} qo'shildi!", call.message.chat.id, call.message.message_id)
     except:
         bot.send_message(uid, f"✅ Savol #{q_id} qo'shildi!")
+
+# ==================== KO'P SAVOL QO'SHISH (BULK) ====================
+# Format:
+# Savol matni
+# A) variant
+# B) variant
+# C) variant
+# D) variant
+# To'g'ri: A
+# ---
+# Savol matni 2
+# ...
+
+BULK_EXAMPLE = """📥 <b>Ko'p savol qo'shish formati:</b>
+
+Har bir savolni quyidagi tartibda yozing, savollar orasiga <code>---</code> qo'ying:
+
+<code>Qaysi planet eng katta?
+A) Yer
+B) Mars
+C) Yupiter
+D) Saturn
+To'g'ri: C
+---
+Suv formulasi nima?
+A) CO2
+B) H2O
+C) O2
+D) NaCl
+To'g'ri: B</code>
+
+Yuborishdan oldin to'g'ri formatda ekanligini tekshiring."""
+
+@bot.callback_query_handler(func=lambda c: c.data == "bulk_q")
+def cb_bulk_q(call):
+    if not is_admin(call.from_user.id):
+        bot.answer_callback_query(call.id, "❌ Ruxsat yo'q!", show_alert=True); return
+    bot.send_message(call.from_user.id, BULK_EXAMPLE + "\n\n✏️ Endi savollaringizni yuboring:")
+    set_state(call.from_user.id, "bulk_q")
+
+@bot.message_handler(func=lambda m: get_state(m.from_user.id) == "bulk_q")
+def do_bulk_q(message):
+    uid = message.from_user.id
+    clear_state(uid)
+    text = message.text.strip()
+    blocks = [b.strip() for b in text.split("---") if b.strip()]
+
+    added = []
+    errors = []
+
+    for i, block in enumerate(blocks, 1):
+        lines = [l.strip() for l in block.strip().splitlines() if l.strip()]
+        try:
+            # Savol matni (1-qator yoki A) gacha bo'lgan barcha qatorlar)
+            q_lines = []
+            rest = []
+            for idx, line in enumerate(lines):
+                if line.upper().startswith("A)") or line.upper().startswith("A )"):
+                    rest = lines[idx:]
+                    break
+                q_lines.append(line)
+
+            if not q_lines or len(rest) < 5:
+                errors.append(f"#{i}: Format noto'g'ri")
+                continue
+
+            q_text = " ".join(q_lines)
+            opt_a = rest[0][2:].strip() if rest[0].upper().startswith("A)") else rest[0][3:].strip()
+            opt_b = rest[1][2:].strip() if rest[1].upper().startswith("B)") else rest[1][3:].strip()
+            opt_c = rest[2][2:].strip() if rest[2].upper().startswith("C)") else rest[2][3:].strip()
+            opt_d = rest[3][2:].strip() if rest[3].upper().startswith("D)") else rest[3][3:].strip()
+
+            # To'g'ri javob qatori: "To'g'ri: A" yoki "Togri: B"
+            correct_line = rest[4]
+            correct = correct_line.split(":")[-1].strip().upper()
+            if correct not in ["A", "B", "C", "D"]:
+                errors.append(f"#{i}: To'g'ri javob noto'g'ri ({correct})")
+                continue
+
+            conn = get_conn()
+            c = conn.cursor()
+            c.execute(
+                "INSERT INTO questions (question_text,option_a,option_b,option_c,option_d,correct_answer,added_at) VALUES (?,?,?,?,?,?,?)",
+                (q_text, opt_a, opt_b, opt_c, opt_d, correct, datetime.now().isoformat())
+            )
+            conn.commit()
+            added.append(c.lastrowid)
+            conn.close()
+
+        except Exception as e:
+            errors.append(f"#{i}: {str(e)}")
+
+    result = f"✅ <b>{len(added)} ta savol qo'shildi!</b>"
+    if added:
+        result += f"\nID lar: {', '.join(map(str, added))}"
+    if errors:
+        result += f"\n\n❌ <b>{len(errors)} ta xato:</b>\n" + "\n".join(errors)
+
+    bot.send_message(uid, result)
 
 # ==================== SAVOLLAR RO'YXATI ====================
 @bot.callback_query_handler(func=lambda c: c.data == "list_q")
