@@ -275,7 +275,7 @@ def reg_phone(message):
     referaluid = c.fetchone()
     if referaluid !=None:
         c.execute("""UPDATE users SET referal_code = ? WHERE telegram_id = ?""",(referaluid[1],uid))
-        c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (uid,))
+        c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (referaluid[1],))
         bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz </b> 🎉")
 
     conn.commit()
