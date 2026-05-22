@@ -39,6 +39,8 @@ def update_data(user_id, key, value):
 
 def get_data(user_id):
     return user_data_store.get(user_id, {})
+import sqlite3
+
 
 # ==================== DATABASE ====================
 def get_conn():
@@ -348,19 +350,45 @@ def handle_answer(call):
     is_correct = 1 if chosen == correct else 0
     now = datetime.now().isoformat()
     try:
-        c.execute("INSERT INTO answers (user_id, question_id, is_correct, answered_at) VALUES (?,?,?,?)",
-                  (uid, q_id, is_correct, now))
+        c.execute("""
+            INSERT INTO answers (user_id, question_id, is_correct, answered_at)
+            VALUES (?,?,?,?)
+        """, (uid, q_id, is_correct, now))
+
+        # users update har doim ishlashi kerak
         if is_correct:
-            c.execute("UPDATE users SET score=score+10, correct_answers=correct_answers+1, total_answers=total_answers+1, last_active=? WHERE telegram_id=?",
-                      (now, uid))
+            c.execute("""
+                UPDATE users 
+                SET score = score + 10,
+                    correct_answers = correct_answers + 1,
+                    total_answers = total_answers + 1,
+                    last_active = ?
+                WHERE telegram_id = ?
+            """, (now, uid))
         else:
-            c.execute("UPDATE users SET total_answers=total_answers+1, last_active=? WHERE telegram_id=?",
-                      (now, uid))
+            c.execute("""
+                UPDATE users 
+                SET total_answers = total_answers + 1,
+                    last_active = ?
+                WHERE telegram_id = ?
+            """, (now, uid))
+
         conn.commit()
+
     except sqlite3.IntegrityError:
+        conn.rollback()  # muhim!
+
+        try:
+            bot.answer_callback_query(
+                call.id,
+                "Bu savolga allaqachon javob berdingiz!",
+                show_alert=True
+            )
+        except:
+            pass
+
+    finally:
         conn.close()
-        bot.answer_callback_query(call.id, "Bu savolga allaqachon javob berdingiz!", show_alert=True)
-        return
     conn.close()
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("➡️ Keyingi savol", callback_data="next_q"))
