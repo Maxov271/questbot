@@ -8,9 +8,9 @@ import logging
 from datetime import datetime, date
 
 # ==================== SOZLAMALAR ====================
-BOT_TOKEN = "8648316530:AAGpUDwPvSWNazeelITOg95gM3CPxFIlz7E"
+BOT_TOKEN = "8848587840:AAE5F2w1cgfBnir9liCF0Rk6eg6vVUqzNUk"
 LEADER_ID = 8623551943  # O'zingizning Telegram ID ingiz
-
+BOT_USERNAME = "devopssinovbot"
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -56,7 +56,8 @@ def init_db():
         total_answers INTEGER DEFAULT 0,
         correct_answers INTEGER DEFAULT 0,
         registered_at TEXT,
-        last_active TEXT
+        last_active TEXT,
+        referal_code INTEGER
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS admins (
         id INTEGER PRIMARY KEY,
@@ -92,6 +93,9 @@ def init_db():
         stat_date TEXT UNIQUE,
         sent_at TEXT
     )""")
+    c.execute("""CREATE TABLE IF NOT EXISTS referal (
+    user_id INTEGER,
+    referal_id INTEGER)""")
     conn.commit()
     conn.close()
     logger.info("Database tayyor.")
@@ -167,12 +171,30 @@ def main_menu(user_id):
         kb.row("📈 Mening natijam")
     return kb
 
+def  referal(user_id,referal_id):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO referal (user_id, referal_id) VALUES (?,?)
+    """, (user_id, referal_id))
+    conn.commit()
+    conn.close()
 # ==================== /start ====================
 @bot.message_handler(commands=['start'])
 def cmd_start(message):
+    args = message.text.split()
+
+    if len(args) >1:
+        referal_id = args[1]
+
+        if referal_id != str(message.from_user.id):
+            referal(message.from_user.id,referal_id)
     uid = message.from_user.id
     clear_state(uid)
     not_sub = check_subscription(uid)
+
+
+
     if not_sub:
         bot.send_message(uid, "📢 <b>Botdan foydalanish uchun kanallarga obuna bo'ling:</b>",
                          reply_markup=sub_keyboard(not_sub))
@@ -184,6 +206,26 @@ def cmd_start(message):
     bot.send_message(uid, "👋 <b>Xush kelibsiz!</b>\n\n📝 Ism va familiyangizni kiriting:",
                      reply_markup=types.ReplyKeyboardRemove())
     set_state(uid, "reg_name")
+
+
+@bot.message_handler(commands=['referal'])
+def postreferal(message):
+
+
+    markup = types.InlineKeyboardMarkup()
+
+    btn = types.InlineKeyboardButton(
+        text="📎 Referal linkimni olish",
+        callback_data="get_ref"
+    )
+
+    markup.add(btn)
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text="👇 Referal linkingizni olish uchun tugmani bosing:",
+        reply_markup=markup
+    )
 
 @bot.callback_query_handler(func=lambda c: c.data == "check_sub")
 def cb_check_sub(call):
@@ -224,8 +266,16 @@ def reg_phone(message):
     now = datetime.now().isoformat()
     conn = get_conn()
     c = conn.cursor()
+
     c.execute("INSERT OR IGNORE INTO users (telegram_id, full_name, phone, registered_at, last_active) VALUES (?,?,?,?,?)",
               (uid, name, phone, now, now))
+    c.execute("SELECT * FROM referal WHERE user_id = ?",(uid,))
+    referaluid = c.fetchone()
+    if referaluid !=None:
+        c.execute("""UPDATE users SET referal_code = ? WHERE telegram_id = ?""",(referaluid[1],uid))
+        c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (uid,))
+        bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz </b> 🎉")
+
     conn.commit()
     conn.close()
     clear_state(uid)
@@ -326,6 +376,20 @@ def handle_answer(call):
 @bot.callback_query_handler(func=lambda c: c.data == "next_q")
 def next_q(call):
     send_question_to(call.from_user.id, edit_msg=call.message)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "get_ref")
+def get_ref(call):
+
+    user_id = call.from_user.id
+
+    ref_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
+
+    bot.send_message(
+        chat_id=call.message.chat.id,
+        text=f"🔗 Sizning referal linkingiz:\n\n<code>{ref_link}</code>\n\n👆 Ustiga bosib nusxa oling",
+        parse_mode="HTML"
+    )
 
 # ==================== REYTING ====================
 @bot.message_handler(func=lambda m: m.text == "🏆 Reyting")
