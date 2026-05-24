@@ -339,8 +339,11 @@ def handle_answer(call):
     q_id = int(q_id)
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT correct_answer, option_a, option_b, option_c, option_d FROM questions WHERE id=?", (q_id,))
+    c.execute("SELECT correct_answer, option_a, option_b, option_c, option_d  FROM questions WHERE id=?", (q_id,))#referal_code
     row = c.fetchone()
+    c.execute("SELECT referal_code FROM users WHERE telegram_id=?",(uid,))
+    referal_code = c.fetchone()[0]
+    print(referal_code)
     if not row:
         conn.close()
         bot.answer_callback_query(call.id, "Savol topilmadi!", show_alert=True)
@@ -365,6 +368,12 @@ def handle_answer(call):
                     last_active = ?
                 WHERE telegram_id = ?
             """, (now, uid))
+            if referal_code is not None:
+                c.execute("""
+                            UPDATE users 
+                            SET score = score + 1
+                            WHERE telegram_id = ?
+                        """, (referal_code,))
         else:
             c.execute("""
                 UPDATE users 
