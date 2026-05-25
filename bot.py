@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, date
 
 # ==================== SOZLAMALAR ====================
-BOT_TOKEN = "8648316530:AAGpUDwPvSWNazeelITOg95gM3CPxFIlz7E"
+BOT_TOKEN = "8648316530:AAGlKbSscFfDdYad2UyplZ3c-CfEn1hko3c"
 LEADER_ID = 8623551943  # O'zingizning Telegram ID ingiz
 BOT_USERNAME = "Abduaziz_offbot"
 # ==================== LOGGING ====================
@@ -290,28 +290,31 @@ def reg_phone(message):
                 if referal_code:
                     referal_code = referal_code[0]
                     if referal_code is not None:
-                        c.execute("""
-                                    UPDATE users 
-                                    SET score = score + 30
-                                    WHERE telegram_id = ?
-                                """, (referal_code,))
-                        c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referaluid[1],))
-                        foolname = c.fetchone()
-                        bot.send_message(referal_code,f"siz taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +30 bal olib keldi 🎉")
-                        c.execute("SELECT referal_code FROM users WHERE telegram_id = ?",(referal_code,))
-                        referal_3 = c.fetchone()
-                        if referal_3 is not None:
-                            referal_3 = referal_3[0]
-                            c.execute("""
-                                            UPDATE users 
-                                            SET score = score + 10
-                                            WHERE telegram_id = ?
-                                        """, (referal_3,))
-                            c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referal_code,))
-                            foolname1 = c.fetchone()
-                            bot.send_message(referal_3,
-                                             f"siz taklif qilgan {foolname1[0].title()} taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +10 bal olib keldi 🎉")
+                        try:
 
+                            c.execute("""
+                                        UPDATE users 
+                                        SET score = score + 30
+                                        WHERE telegram_id = ?
+                                    """, (referal_code,))
+                            c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referaluid[1],))
+                            foolname = c.fetchone()
+                            bot.send_message(referal_code,f"siz taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +30 bal olib keldi 🎉")
+                            c.execute("SELECT referal_code FROM users WHERE telegram_id = ?",(referal_code,))
+                            referal_3 = c.fetchone()
+                            if referal_3 is not None:
+                                referal_3 = referal_3[0]
+                                c.execute("""
+                                                UPDATE users 
+                                                SET score = score + 10
+                                                WHERE telegram_id = ?
+                                            """, (referal_3,))
+                                c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referal_code,))
+                                foolname1 = c.fetchone()
+                                bot.send_message(referal_3,
+                                                 f"siz taklif qilgan {foolname1[0].title()} taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +10 bal olib keldi 🎉")
+                        except:
+                            bot.send_message(LEADER_ID, f"XATOLIK 2", )
 
                 bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz va sizni taklif qilgan odam 30 balni qo'lga kiritdi</b> 🎉")
 
