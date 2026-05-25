@@ -8,9 +8,9 @@ import logging
 from datetime import datetime, date
 
 # ==================== SOZLAMALAR ====================
-BOT_TOKEN = "8648316530:AAGpUDwPvSWNazeelITOg95gM3CPxFIlz7E"
+BOT_TOKEN = "8848587840:AAE5F2w1cgfBnir9liCF0Rk6eg6vVUqzNUk"
 LEADER_ID = 8623551943  # O'zingizning Telegram ID ingiz
-BOT_USERNAME = "Abduaziz_offbot"
+BOT_USERNAME = "devopssinovbot"
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -273,11 +273,50 @@ def reg_phone(message):
               (uid, name, phone, now, now))
     c.execute("SELECT * FROM referal WHERE user_id = ?",(uid,))
     referaluid = c.fetchone()
-    if referaluid !=None:
-        c.execute("""UPDATE users SET referal_code = ? WHERE telegram_id = ?""",(referaluid[1],uid))
-        c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (referaluid[1],))
-        bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz </b> 🎉")
+    c.execute("SELECT referal_code FROM users WHERE telegram_id=?", (uid,))
+    referalcode = c.fetchone()
+    if referalcode:
+        referalcode = referalcode[0]
+    try:
 
+        if referalcode==None:
+
+            if referaluid !=None:
+                c.execute("""UPDATE users SET referal_code = ? WHERE telegram_id = ?""",(referaluid[1],uid))
+                c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (referaluid[1],))
+                c.execute("SELECT referal_code FROM users WHERE telegram_id=?", (referaluid[1],))
+
+                referal_code = c.fetchone()
+                if referal_code:
+                    referal_code = referal_code[0]
+                    if referal_code is not None:
+                        c.execute("""
+                                    UPDATE users 
+                                    SET score = score + 30
+                                    WHERE telegram_id = ?
+                                """, (referal_code,))
+                        c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referaluid[1],))
+                        foolname = c.fetchone()
+                        bot.send_message(referal_code,f"siz taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +30 bal olib keldi 🎉")
+                        c.execute("SELECT referal_code FROM users WHERE telegram_id = ?",(referal_code,))
+                        referal_3 = c.fetchone()
+                        if referal_3 is not None:
+                            referal_3 = referal_3[0]
+                            c.execute("""
+                                            UPDATE users 
+                                            SET score = score + 10
+                                            WHERE telegram_id = ?
+                                        """, (referal_3,))
+                            c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referal_code,))
+                            foolname1 = c.fetchone()
+                            bot.send_message(referal_3,
+                                             f"siz taklif qilgan {foolname1[0].title()} taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +10 bal olib keldi 🎉")
+
+
+                bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz va sizni taklif qilgan odam 30 balni qo'lga kiritdi</b> 🎉")
+
+    except:
+        bot.send_message(LEADER_ID, f"XATOLIK",)
     conn.commit()
     conn.close()
     clear_state(uid)
@@ -343,7 +382,7 @@ def handle_answer(call):
     row = c.fetchone()
     c.execute("SELECT referal_code FROM users WHERE telegram_id=?",(uid,))
     referal_code = c.fetchone()[0]
-    print(referal_code)
+
     if not row:
         conn.close()
         bot.answer_callback_query(call.id, "Savol topilmadi!", show_alert=True)
