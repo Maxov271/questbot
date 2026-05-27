@@ -283,7 +283,7 @@ def reg_phone(message):
 
             if referaluid !=None:
                 c.execute("""UPDATE users SET referal_code = ? WHERE telegram_id = ?""",(referaluid[1],uid))
-                c.execute("UPDATE users SET score=score+300 WHERE telegram_id=?", (referaluid[1],))
+                c.execute("UPDATE users SET score=score+900 WHERE telegram_id=?", (referaluid[1],))
                 c.execute("SELECT referal_code FROM users WHERE telegram_id=?", (referaluid[1],))
 
                 referal_code = c.fetchone()
@@ -294,29 +294,29 @@ def reg_phone(message):
 
                             c.execute("""
                                         UPDATE users 
-                                        SET score = score + 30
+                                        SET score = score + 90
                                         WHERE telegram_id = ?
                                     """, (referal_code,))
                             c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referaluid[1],))
                             foolname = c.fetchone()
-                            bot.send_message(referal_code,f"siz taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +30 bal olib keldi 🎉")
+                            bot.send_message(referal_code,f"siz taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +90 bal olib keldi 🎉")
                             c.execute("SELECT referal_code FROM users WHERE telegram_id = ?",(referal_code,))
                             referal_3 = c.fetchone()
                             if referal_3 is not None:
                                 referal_3 = referal_3[0]
                                 c.execute("""
                                                 UPDATE users 
-                                                SET score = score + 10
+                                                SET score = score + 30
                                                 WHERE telegram_id = ?
                                             """, (referal_3,))
                                 c.execute("SELECT full_name FROM users WHERE telegram_id = ?", (referal_code,))
                                 foolname1 = c.fetchone()
                                 bot.send_message(referal_3,
-                                                 f"siz taklif qilgan {foolname1[0].title()} taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +10 bal olib keldi 🎉")
+                                                 f"siz taklif qilgan {foolname1[0].title()} taklif qilgan {foolname[0].title()} foydalanuvchisi botga {name.title()} ni taklif qildi va sizga +30 bal olib keldi 🎉")
                         except:
                             bot.send_message(LEADER_ID, f"XATOLIK 2", )
 
-                bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+300 ball  bal qo'lga kiritgingiz va sizni taklif qilgan odam 30 balni qo'lga kiritdi</b> 🎉")
+                bot.send_message(referaluid[1],f"siz {name.title()} ni taklif qilganingiz uchun <b>+900 ball  bal qo'lga kiritgingiz va sizni taklif qilgan odam 30 balni qo'lga kiritdi</b> 🎉")
 
     except:
         bot.send_message(LEADER_ID, f"XATOLIK",)
