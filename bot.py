@@ -404,7 +404,7 @@ def handle_answer(call):
         if is_correct:
             c.execute("""
                 UPDATE users 
-                SET score = score + 10,
+                SET score = score + 90,
                     correct_answers = correct_answers + 1,
                     total_answers = total_answers + 1,
                     last_active = ?
@@ -444,7 +444,7 @@ def handle_answer(call):
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("➡️ Keyingi savol", callback_data="next_q"))
     if is_correct:
-        text = "✅ <b>To'g'ri javob!</b> +10 ball 🎉"
+        text = "✅ <b>To'g'ri javob!</b> +90 ball 🎉"
     else:
         text = f"❌ <b>Noto'g'ri!</b>\nTo'g'ri javob: <b>{correct}) {opts[correct]}</b>"
     try:
